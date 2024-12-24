@@ -1,0 +1,37 @@
+name: Deploy Docker Image to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: executing remote ssh commands using ssh key
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/ubuntu/cicd && git pull 
+          sleep 5
+          sudo docker stop test
+          sleep 10
+          sudo docker rm test
+          sleep 5
+          sudo docker rmi test
+          sleep 9
+          cd /home/ubuntu/cicd && sudo docker build -t test . --no-cache 
+          sleep 15
+          sudo docker run -d --name 80:80 test
